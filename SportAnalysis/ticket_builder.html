@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket Builder — Combo Odds Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch:#FFFFFF;
+    --pitch-deep:#F3F3F1;
+    --pitch-card:#F6F6F4;
+    --chalk:#111111;
+    --chalk-muted:#5A5A5A;
+    --gold:#A9760E;
+    --gold-dim:#7A5709;
+    --home:#1F7A6C;
+    --away:#C13F27;
+    --line: rgba(0,0,0,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(228,179,74,0.06), transparent 55%),
+      var(--pitch);
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    padding:32px 16px 80px;
+  }
+  .wrap{max-width:820px;margin:0 auto;}
+
+  header{text-align:center;margin-bottom:28px;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.24em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:38px;
+    letter-spacing:0.01em;
+    margin:0 0 8px;
+    text-transform:uppercase;
+  }
+  .sub{color:var(--chalk-muted);font-size:14.5px;max-width:480px;margin:0 auto;line-height:1.5;}
+
+  .slip{
+    background:var(--pitch-card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px 22px 22px;
+    box-shadow:0 20px 50px -20px rgba(0,0,0,0.6);
+  }
+
+  .slip-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:14px;
+  }
+  .slip-head h2{
+    font-family:'Oswald',sans-serif;
+    font-size:15px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    margin:0;
+    color:var(--chalk);
+  }
+  .slip-head span{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--chalk-muted);
+  }
+
+  .row-num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--gold-dim);
+  }
+  .team-input{
+    background:transparent;
+    border:none;
+    border-bottom:1px solid transparent;
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    padding:4px 2px;
+    width:100%;
+    min-width:0;
+  }
+  .team-input.home{color:var(--home);}
+  .team-input.away{color:var(--away);}
+  .team-input:focus{outline:none;border-color:var(--gold-dim);}
+  .vs{
+    text-align:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--chalk-muted);
+    letter-spacing:0.08em;
+  }
+
+  .steps-nav{
+    display:flex;
+    gap:8px;
+    margin-bottom:20px;
+  }
+  .step-tab{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    background:transparent;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px;
+    color:var(--chalk-muted);
+    font-family:'Oswald',sans-serif;
+    font-size:12.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:border-color 0.15s ease, color 0.15s ease;
+  }
+  .step-tab span{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:rgba(237,232,218,0.1);
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+  }
+  .step-tab.active{
+    color:var(--gold);
+    border-color:var(--gold-dim);
+  }
+  .step-tab.active span{background:var(--gold);color:var(--pitch);}
+  .step-tab.done{color:var(--home);}
+
+  .back-link{
+    background:none;
+    border:none;
+    color:var(--chalk-muted);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    cursor:pointer;
+    padding:0;
+  }
+  .back-link:hover{color:var(--gold);}
+
+  .team-row{
+    display:grid;
+    grid-template-columns:26px 1fr 20px 1fr;
+    align-items:center;
+    gap:8px;
+    padding:9px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .team-row:last-of-type{border-bottom:none;}
+  .team-row .team-input{
+    background:rgba(0,0,0,0.18);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:8px 9px;
+  }
+
+  .odd-row{
+    display:grid;
+    grid-template-columns:26px 1fr 66px 20px 1fr 66px;
+    align-items:center;
+    gap:8px;
+    padding:9px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .odd-row:last-of-type{border-bottom:none;}
+  .team-label{
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    padding:4px 2px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .team-label.home{color:var(--home);}
+  .team-label.away{color:var(--away);}
+  .odd-input{
+    background:rgba(0,0,0,0.22);
+    border:1px solid var(--line);
+    border-radius:6px;
+    color:var(--gold);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:600;
+    font-size:13.5px;
+    padding:6px 4px;
+    width:100%;
+    text-align:center;
+  }
+  .odd-input:focus{outline:none;border-color:var(--gold-dim);}
+  .odd-input.home{color:var(--home);}
+  .odd-input.away{color:var(--away);}
+
+  .generate-btn{
+    width:100%;
+    margin-top:20px;
+    padding:14px;
+    background:var(--gold);
+    color:var(--pitch);
+    border:none;
+    border-radius:9px;
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .generate-btn:hover{box-shadow:0 8px 22px -10px rgba(228,179,74,0.5);}
+  .generate-btn:active{transform:scale(0.99);}
+  .generate-btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .hint{
+    font-size:11.5px;
+    color:var(--chalk-muted);
+    text-align:center;
+    margin-top:9px;
+  }
+
+  /* perforated tear divider */
+  .tear{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:34px 0 26px;
+    color:var(--chalk-muted);
+  }
+  .tear::before,.tear::after{
+    content:"";
+    flex:1;
+    height:0;
+    border-top:2px dashed var(--line);
+  }
+  .tear span{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+
+  #results{display:none;}
+
+  .count-block{
+    text-align:center;
+    margin-bottom:22px;
+  }
+  .count-num{
+    font-family:'Oswald',sans-serif;
+    font-size:52px;
+    font-weight:700;
+    color:var(--gold);
+    line-height:1;
+  }
+  .count-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--chalk-muted);
+    margin-top:6px;
+  }
+
+  .callouts{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:22px;
+  }
+  .callout{
+    background:var(--pitch-card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+  }
+  .callout .clabel{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--chalk-muted);
+    margin-bottom:8px;
+  }
+  .callout .codds{
+    font-family:'JetBrains Mono',monospace;
+    font-size:22px;
+    font-weight:700;
+    color:var(--gold);
+  }
+  .callout.risky .codds{color:var(--away);}
+  .callout.safe .codds{color:var(--home);}
+  .callout .cpicks{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    color:var(--chalk-muted);
+    margin-top:8px;
+    line-height:1.6;
+    word-break:break-word;
+  }
+
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .controls select, .controls input{
+    background:rgba(0,0,0,0.22);
+    border:1px solid var(--line);
+    border-radius:7px;
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    padding:8px 10px;
+  }
+  .controls label{
+    font-size:11px;
+    color:var(--chalk-muted);
+    margin-right:5px;
+  }
+  .controls .grp{display:flex;align-items:center;gap:5px;}
+  .controls input[type=number]{width:70px;}
+  .controls .stake-grp input[type=number]{width:90px;color:var(--gold);font-family:'JetBrains Mono',monospace;font-weight:600;}
+
+  .icon-btn{
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-size:14px;
+    padding:2px 4px;
+    line-height:1;
+    color:var(--chalk-muted);
+    transition:transform 0.1s ease, color 0.1s ease;
+  }
+  .icon-btn:hover{color:var(--chalk);transform:scale(1.15);}
+  .icon-btn.starred{color:var(--gold);}
+  .star-cell, .copy-cell{width:34px;text-align:center;}
+  .sb-btn{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:0.03em;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:3px 5px;
+    color:var(--chalk-muted);
+  }
+  .sb-btn:hover{color:var(--gold);border-color:var(--gold-dim);transform:none;}
+
+  .saved-panel{
+    background:var(--pitch-card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:18px;
+    display:none;
+  }
+  .saved-panel.has-items{display:block;}
+  .saved-panel .sp-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .saved-panel .sp-head h3{
+    font-family:'Oswald',sans-serif;
+    font-size:13px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    margin:0;
+    color:var(--gold);
+  }
+  .saved-panel .sp-count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--chalk-muted);
+  }
+  .saved-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 0;
+    border-bottom:1px dashed var(--line);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+  }
+  .saved-item:last-child{border-bottom:none;}
+  .saved-item .si-picks{flex:1;color:var(--chalk-muted);line-height:1.7;word-break:break-word;}
+  .saved-item .si-odds{color:var(--gold);font-weight:600;white-space:nowrap;}
+  .saved-item .si-payout{color:var(--home);white-space:nowrap;font-size:11px;}
+  .saved-item .si-actions{display:flex;gap:2px;}
+
+  .payout-cell{color:var(--home);text-align:right;white-space:nowrap;}
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--gold);
+    color:var(--pitch);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:8px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.2s ease, transform 0.2s ease;
+    z-index:100;
+    box-shadow:0 12px 30px -10px rgba(0,0,0,0.5);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+  }
+  thead th{
+    text-align:left;
+    padding:9px 8px;
+    color:var(--chalk-muted);
+    font-weight:500;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:10px;
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    background:var(--pitch);
+  }
+  tbody td{
+    padding:9px 8px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  tbody tr:hover{background:rgba(228,179,74,0.05);}
+  .rank{color:var(--gold-dim);}
+  .picks-cell{color:var(--chalk-muted);line-height:1.7;}
+  .picks-cell .p{display:inline-block;margin-right:6px;padding:1px 5px;border-radius:4px;font-size:11px;}
+  .p.H{background:rgba(79,176,166,0.14);color:var(--home);}
+  .p.A{background:rgba(224,101,77,0.14);color:var(--away);}
+  .odds-cell{color:var(--gold);font-weight:600;text-align:right;}
+
+  .table-scroll{
+    max-height:520px;
+    overflow-y:auto;
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+
+  .pager{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:14px;
+    margin-top:14px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--chalk-muted);
+  }
+  .pager button{
+    background:var(--pitch-card);
+    border:1px solid var(--line);
+    color:var(--chalk);
+    border-radius:6px;
+    padding:6px 12px;
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .pager button:disabled{opacity:0.35;cursor:not-allowed;}
+
+  .empty-msg{
+    text-align:center;
+    color:var(--chalk-muted);
+    font-size:12.5px;
+    padding:30px 10px;
+  }
+
+  @media (max-width:520px){
+    h1{font-size:28px;}
+    .team-row{grid-template-columns:20px 1fr 14px 1fr;gap:5px;}
+    .odd-row{grid-template-columns:20px 1fr 52px 14px 1fr 52px;gap:5px;}
+    .team-input{font-size:12px;}
+    .team-label{font-size:12px;}
+    .callouts{grid-template-columns:1fr;}
+    .steps-nav{gap:5px;}
+    .step-tab{font-size:10.5px;padding:8px 4px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">10 Legs · 2 Outcomes Each</div>
+    <h1>Ticket Builder</h1>
+    <p class="sub">Name your 10 matchups, then set the odds. Generate every one of the 1,024 possible tickets, sorted by combined odds.</p>
+  </header>
+
+  <div class="slip">
+    <div class="steps-nav">
+      <button class="step-tab active" id="tab1" data-step="1"><span>1</span> Teams</button>
+      <button class="step-tab" id="tab2" data-step="2"><span>2</span> Odds</button>
+    </div>
+
+    <div id="step1" class="step-panel">
+      <div class="slip-head">
+        <h2>Enter Teams</h2>
+        <span id="legCount">10 legs</span>
+      </div>
+      <div id="teamRows"></div>
+      <button class="generate-btn" id="nextBtn">Next: Enter Odds →</button>
+      <div class="hint">Name the home and away side for each of the 10 games</div>
+    </div>
+
+    <div id="step2" class="step-panel" style="display:none;">
+      <div class="slip-head">
+        <h2>Enter Odds</h2>
+        <button class="back-link" id="backBtn">← Edit teams</button>
+      </div>
+      <div id="oddRows"></div>
+      <button class="generate-btn" id="genBtn">Generate 1,024 Combos</button>
+      <div class="hint">Combined odds = home odd × away odd × ... across all 10 picks</div>
+    </div>
+  </div>
+
+  <div class="tear"><span>Results</span></div>
+
+  <div id="results">
+    <div class="count-block">
+      <div class="count-num" id="countNum">0</div>
+      <div class="count-label">possible tickets</div>
+    </div>
+
+    <div class="callouts">
+      <div class="callout risky">
+        <div class="clabel">Highest combined odds</div>
+        <div class="codds" id="riskyOdds">—</div>
+        <div class="cpicks" id="riskyPicks"></div>
+        <div class="cpicks" id="riskyPayout" style="color:var(--home);margin-top:4px;"></div>
+      </div>
+      <div class="callout safe">
+        <div class="clabel">Lowest combined odds</div>
+        <div class="codds" id="safeOdds">—</div>
+        <div class="cpicks" id="safePicks"></div>
+        <div class="cpicks" id="safePayout" style="color:var(--home);margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <div class="saved-panel" id="savedPanel">
+      <div class="sp-head">
+        <h3>★ Saved Tickets</h3>
+        <span class="sp-count" id="savedCount">0 saved</span>
+      </div>
+      <div id="savedList"></div>
+    </div>
+
+    <div class="controls">
+      <div class="grp stake-grp">
+        <label for="stakeInput">Stake ₦</label>
+        <input type="number" id="stakeInput" step="1" min="0" value="1000">
+      </div>
+      <div class="grp">
+        <label for="sortSel">Sort</label>
+        <select id="sortSel">
+          <option value="desc">Odds, high to low</option>
+          <option value="asc">Odds, low to high</option>
+        </select>
+      </div>
+      <div class="grp">
+        <label for="minOdds">Min</label>
+        <input type="number" id="minOdds" step="0.01" placeholder="0">
+      </div>
+      <div class="grp">
+        <label for="maxOdds">Max</label>
+        <input type="number" id="maxOdds" step="0.01" placeholder="any">
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="star-cell"></th>
+            <th style="width:44px">#</th>
+            <th>Picks</th>
+            <th style="text-align:right;width:80px">Odds</th>
+            <th style="text-align:right;width:100px">Payout</th>
+            <th class="copy-cell"></th>
+            <th class="copy-cell"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      <button id="prevPage">← Prev</button>
+      <span id="pageInfo">Page 1</span>
+      <button id="nextPage">Next →</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const NUM_GAMES = 10;
+const teamRowsEl = document.getElementById('teamRows');
+const oddRowsEl = document.getElementById('oddRows');
+const PAGE_SIZE = 40;
+
+let games = [];
+let combos = [];
+let filtered = [];
+let page = 0;
+let starred = new Map(); // id -> combo, saved for this session only
+
+function getStake(){
+  const v = parseFloat(document.getElementById('stakeInput').value);
+  return isNaN(v) || v < 0 ? 0 : v;
+}
+function formatMoney(n){
+  return '₦' + n.toLocaleString(undefined, {maximumFractionDigits:2});
+}
+function ticketText(c){
+  const stake = getStake();
+  const payout = stake * c.odds;
+  const lines = c.picks.map((p,i) => `${i+1}. ${p.label} (${p.side === 'H' ? 'Home' : 'Away'})`);
+  return [
+    `TICKET #${c.id} — Combined odds ${c.odds.toFixed(2)}`,
+    ...lines,
+    `Stake: ${formatMoney(stake)}`,
+    `Estimated payout: ${formatMoney(payout)}`
+  ].join('\n');
+}
+function sportyBetTicketText(c){
+  const stake = getStake();
+  const payout = stake * c.odds;
+  // one line per leg, in slip order, matchup first then the pick — quickest to search
+  // and tap in the SportyBet app one at a time
+  const lines = c.picks.map((p,i) => {
+    const game = games[i];
+    const matchup = `${game.homeName} vs ${game.awayName}`;
+    const pickLabel = p.side === 'H' ? game.homeName : game.awayName;
+    return `${i+1}. ${matchup} → pick: ${pickLabel} (1X2)`;
+  });
+  return [
+    `SPORTYBET QUICK-ADD — Ticket #${c.id} · Combined odds ${c.odds.toFixed(2)}`,
+    'Search each matchup below in the app and tap the listed pick, in order:',
+    ...lines,
+    `Suggested stake: ${formatMoney(stake)} → est. payout: ${formatMoney(payout)}`,
+    'Note: confirm each odd on the slip still matches before staking — odds move.'
+  ].join('\n');
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+function copyTicket(c){
+  const text = ticketText(c);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(() => showToast('Ticket copied to clipboard'))
+      .catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function copyTicketSportyBet(c){
+  const text = sportyBetTicketText(c);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(() => showToast('SportyBet quick-add list copied'))
+      .catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand('copy'); showToast('Ticket copied to clipboard'); }
+  catch(e){ showToast('Could not copy — select and copy manually'); }
+  document.body.removeChild(ta);
+}
+function toggleStar(c){
+  if(starred.has(c.id)){
+    starred.delete(c.id);
+  } else {
+    starred.set(c.id, c);
+  }
+  renderTable();
+  renderSavedPanel();
+}
+function renderSavedPanel(){
+  const panel = document.getElementById('savedPanel');
+  const list = document.getElementById('savedList');
+  const count = starred.size;
+  document.getElementById('savedCount').textContent = `${count} saved`;
+  panel.classList.toggle('has-items', count > 0);
+  const stake = getStake();
+  list.innerHTML = [...starred.values()].map(c => `
+    <div class="saved-item">
+      <span class="si-picks">${c.picks.map(p => p.label).join(' · ')}</span>
+      <span class="si-odds">${c.odds.toFixed(2)}</span>
+      <span class="si-payout">${formatMoney(stake * c.odds)}</span>
+      <span class="si-actions">
+        <button class="icon-btn" data-action="copy" data-id="${c.id}" title="Copy detailed ticket">⧉</button>
+        <button class="icon-btn sb-btn" data-action="copy-sb" data-id="${c.id}" title="Copy SportyBet quick-add list">SB</button>
+        <button class="icon-btn starred" data-action="unstar" data-id="${c.id}" title="Remove">★</button>
+      </span>
+    </div>
+  `).join('');
+}
+
+// default odds retained across rebuilds of the odds panel
+const oddsState = Array.from({length: NUM_GAMES}, () => ({
+  homeOdd: (1.8 + Math.random()*0.6).toFixed(2),
+  awayOdd: (1.8 + Math.random()*0.6).toFixed(2)
+}));
+
+function buildTeamRows(){
+  teamRowsEl.innerHTML = '';
+  for(let i=0;i<NUM_GAMES;i++){
+    const row = document.createElement('div');
+    row.className = 'team-row';
+    row.innerHTML = `
+      <span class="row-num">${i+1}</span>
+      <input class="team-input home" type="text" value="Home ${i+1}" data-idx="${i}" data-side="home-name">
+      <span class="vs">vs</span>
+      <input class="team-input away" type="text" value="Away ${i+1}" data-idx="${i}" data-side="away-name">
+    `;
+    teamRowsEl.appendChild(row);
+  }
+}
+buildTeamRows();
+
+function readTeamNames(){
+  const arr = [];
+  for(let i=0;i<NUM_GAMES;i++){
+    const homeName = teamRowsEl.querySelector(`[data-idx="${i}"][data-side="home-name"]`).value.trim() || `Home ${i+1}`;
+    const awayName = teamRowsEl.querySelector(`[data-idx="${i}"][data-side="away-name"]`).value.trim() || `Away ${i+1}`;
+    arr.push({homeName, awayName});
+  }
+  return arr;
+}
+
+function buildOddRows(names){
+  // capture any odds already typed before rebuilding
+  for(let i=0;i<NUM_GAMES;i++){
+    const hInput = oddRowsEl.querySelector(`[data-idx="${i}"][data-side="home-odd"]`);
+    const aInput = oddRowsEl.querySelector(`[data-idx="${i}"][data-side="away-odd"]`);
+    if(hInput) oddsState[i].homeOdd = hInput.value;
+    if(aInput) oddsState[i].awayOdd = aInput.value;
+  }
+
+  oddRowsEl.innerHTML = '';
+  for(let i=0;i<NUM_GAMES;i++){
+    const row = document.createElement('div');
+    row.className = 'odd-row';
+    row.innerHTML = `
+      <span class="row-num">${i+1}</span>
+      <span class="team-label home">${names[i].homeName}</span>
+      <input class="odd-input home" type="number" step="0.01" min="1" value="${oddsState[i].homeOdd}" data-idx="${i}" data-side="home-odd">
+      <span class="vs">vs</span>
+      <span class="team-label away">${names[i].awayName}</span>
+      <input class="odd-input away" type="number" step="0.01" min="1" value="${oddsState[i].awayOdd}" data-idx="${i}" data-side="away-odd">
+    `;
+    oddRowsEl.appendChild(row);
+  }
+}
+
+function goToStep(stepNum){
+  const step1 = document.getElementById('step1');
+  const step2 = document.getElementById('step2');
+  const tab1 = document.getElementById('tab1');
+  const tab2 = document.getElementById('tab2');
+
+  if(stepNum === 2){
+    buildOddRows(readTeamNames());
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+    tab1.classList.remove('active');
+    tab1.classList.add('done');
+    tab2.classList.add('active');
+  } else {
+    step1.style.display = 'block';
+    step2.style.display = 'none';
+    tab2.classList.remove('active');
+    tab1.classList.add('active');
+    tab1.classList.remove('done');
+  }
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => goToStep(2));
+document.getElementById('backBtn').addEventListener('click', () => goToStep(1));
+document.getElementById('tab1').addEventListener('click', () => goToStep(1));
+document.getElementById('tab2').addEventListener('click', () => goToStep(2));
+
+function readGames(){
+  const names = readTeamNames();
+  const arr = [];
+  for(let i=0;i<NUM_GAMES;i++){
+    const homeOdd = parseFloat(oddRowsEl.querySelector(`[data-idx="${i}"][data-side="home-odd"]`).value) || 1;
+    const awayOdd = parseFloat(oddRowsEl.querySelector(`[data-idx="${i}"][data-side="away-odd"]`).value) || 1;
+    arr.push({homeName: names[i].homeName, awayName: names[i].awayName, homeOdd, awayOdd});
+  }
+  return arr;
+}
+
+function generateCombos(g){
+  const total = 1 << NUM_GAMES; // 1024
+  const list = [];
+  for(let mask=0; mask<total; mask++){
+    let odds = 1;
+    const picks = [];
+    for(let i=0;i<NUM_GAMES;i++){
+      const isAway = (mask >> i) & 1;
+      const game = g[i];
+      if(isAway){
+        odds *= game.awayOdd;
+        picks.push({side:'A', label: game.awayName});
+      } else {
+        odds *= game.homeOdd;
+        picks.push({side:'H', label: game.homeName});
+      }
+    }
+    list.push({id: mask+1, odds, picks});
+  }
+  return list;
+}
+
+function applyFilterSort(){
+  const min = parseFloat(document.getElementById('minOdds').value);
+  const max = parseFloat(document.getElementById('maxOdds').value);
+  const sortDir = document.getElementById('sortSel').value;
+
+  filtered = combos.filter(c => {
+    if(!isNaN(min) && c.odds < min) return false;
+    if(!isNaN(max) && c.odds > max) return false;
+    return true;
+  });
+
+  filtered.sort((a,b) => sortDir === 'desc' ? b.odds - a.odds : a.odds - b.odds);
+  page = 0;
+  renderTable();
+}
+
+function picksHTML(picks){
+  return picks.map(p => `<span class="p ${p.side}">${p.side}</span>`).join('');
+}
+
+function renderTable(){
+  const tbody = document.getElementById('tbody');
+  const start = page * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+  const stake = getStake();
+
+  if(pageItems.length === 0){
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-msg">No tickets match this odds range.</div></td></tr>`;
+  } else {
+    tbody.innerHTML = pageItems.map((c, idx) => `
+      <tr>
+        <td class="star-cell"><button class="icon-btn ${starred.has(c.id) ? 'starred' : ''}" data-action="star" data-id="${c.id}" title="Save ticket">★</button></td>
+        <td class="rank">${start + idx + 1}</td>
+        <td class="picks-cell">${picksHTML(c.picks)}</td>
+        <td class="odds-cell">${c.odds.toFixed(2)}</td>
+        <td class="payout-cell">${formatMoney(stake * c.odds)}</td>
+        <td class="copy-cell"><button class="icon-btn" data-action="copy" data-id="${c.id}" title="Copy detailed ticket">⧉</button></td>
+        <td class="copy-cell"><button class="icon-btn sb-btn" data-action="copy-sb" data-id="${c.id}" title="Copy SportyBet quick-add list">SB</button></td>
+      </tr>
+    `).join('');
+  }
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  document.getElementById('pageInfo').textContent = `Page ${page+1} of ${totalPages} · ${filtered.length} tickets`;
+  document.getElementById('prevPage').disabled = page === 0;
+  document.getElementById('nextPage').disabled = page >= totalPages - 1;
+}
+
+function renderCallouts(){
+  const sorted = [...combos].sort((a,b) => b.odds - a.odds);
+  const highest = sorted[0];
+  const lowest = sorted[sorted.length - 1];
+  const stake = getStake();
+
+  document.getElementById('riskyOdds').textContent = highest.odds.toFixed(2);
+  document.getElementById('riskyPicks').innerHTML = highest.picks.map(p => p.label).join(' · ');
+  document.getElementById('riskyPayout').textContent = `Payout on ${formatMoney(stake)}: ${formatMoney(stake * highest.odds)}`;
+
+  document.getElementById('safeOdds').textContent = lowest.odds.toFixed(2);
+  document.getElementById('safePicks').innerHTML = lowest.picks.map(p => p.label).join(' · ');
+  document.getElementById('safePayout').textContent = `Payout on ${formatMoney(stake)}: ${formatMoney(stake * lowest.odds)}`;
+}
+
+function animateCount(target){
+  const el = document.getElementById('countNum');
+  let cur = 0;
+  const step = Math.ceil(target / 24);
+  const t = setInterval(() => {
+    cur += step;
+    if(cur >= target){ cur = target; clearInterval(t); }
+    el.textContent = cur.toLocaleString();
+  }, 16);
+}
+
+document.getElementById('genBtn').addEventListener('click', () => {
+  games = readGames();
+  combos = generateCombos(games);
+  filtered = [...combos];
+  starred = new Map();
+
+  document.getElementById('results').style.display = 'block';
+  animateCount(combos.length);
+  renderCallouts();
+  renderSavedPanel();
+  applyFilterSort();
+
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+document.getElementById('sortSel').addEventListener('change', applyFilterSort);
+document.getElementById('minOdds').addEventListener('input', applyFilterSort);
+document.getElementById('maxOdds').addEventListener('input', applyFilterSort);
+document.getElementById('stakeInput').addEventListener('input', () => {
+  renderTable();
+  renderCallouts();
+  renderSavedPanel();
+});
+
+document.getElementById('prevPage').addEventListener('click', () => {
+  if(page > 0){ page--; renderTable(); }
+});
+document.getElementById('nextPage').addEventListener('click', () => {
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if(page < totalPages - 1){ page++; renderTable(); }
+});
+
+// Event delegation for star / copy actions in the main table and saved panel
+function findComboById(id){
+  return combos.find(c => c.id === id);
+}
+document.getElementById('tbody').addEventListener('click', (e) => {
+  const btn = e.target.closest('.icon-btn');
+  if(!btn) return;
+  const id = parseInt(btn.dataset.id, 10);
+  const combo = findComboById(id);
+  if(!combo) return;
+  if(btn.dataset.action === 'star') toggleStar(combo);
+  if(btn.dataset.action === 'copy') copyTicket(combo);
+  if(btn.dataset.action === 'copy-sb') copyTicketSportyBet(combo);
+});
+document.getElementById('savedList').addEventListener('click', (e) => {
+  const btn = e.target.closest('.icon-btn');
+  if(!btn) return;
+  const id = parseInt(btn.dataset.id, 10);
+  const combo = findComboById(id);
+  if(!combo) return;
+  if(btn.dataset.action === 'unstar') toggleStar(combo);
+  if(btn.dataset.action === 'copy') copyTicket(combo);
+  if(btn.dataset.action === 'copy-sb') copyTicketSportyBet(combo);
+});
+</script>
+</body>
+</html>
